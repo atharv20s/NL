@@ -1,10 +1,11 @@
 {
   "skill_name": "weekly-analytics-report",
+  "description": "Evaluations for testing deterministic parsing, WoW math, graceful fallbacks, and HTML Artifact generation from scheduled GA4 & GSC CSVs.",
   "evals": [
     {
       "id": 1,
+      "name": "Standard 6-Report Ingestion & Dashboard Render",
       "prompt": "Here are the 6 scheduled Google Analytics 4 and Google Search Console CSV exports from this week: traffic overview, channel grouping, landing pages, search queries, device breakdown, and page engagement. Please run /weekly-analytics-report and generate my weekly dashboard Artifact.",
-      "expected_output": "The skill should identify all 6 CSV files, parse traffic, channels, queries, pages, devices, and engagement, calculate KPIs (sessions, users, organic clicks, CTR, position), and output a self-contained dark-mode HTML Artifact report with Chart.js charts and key findings callouts.",
       "files": [
         "examples/current_week/traffic_overview.csv",
         "examples/current_week/channel_grouping.csv",
@@ -12,25 +13,50 @@
         "examples/current_week/search_queries.csv",
         "examples/current_week/device_breakdown.csv",
         "examples/current_week/page_engagement.csv"
+      ],
+      "expected_output": "The skill should identify all 6 CSV files, parse traffic, channels, queries, pages, devices, and engagement, calculate KPIs (sessions, users, organic clicks, CTR, position), and output a self-contained dark-mode HTML Artifact report with Chart.js charts and key findings callouts.",
+      "assertions": [
+        "Detects all 6 report types without user intervention",
+        "Calculates Total Sessions, Users, and Average Session Duration accurately",
+        "Calculates weighted search position rather than arithmetic average",
+        "Renders a self-contained HTML Artifact with embedded Chart.js graphs",
+        "Displays positive/negative metrics with green/red indicator badges"
       ]
     },
     {
       "id": 2,
+      "name": "Week-over-Week Delta & Trend Comparison",
       "prompt": "I have uploaded both this week's 6 CSV reports and last week's 6 CSV reports. Compare them week-over-week and tell me where our traffic growth came from, which queries gained momentum, and which pages dropped.",
-      "expected_output": "The skill should parse both sets of files, compute deterministic week-over-week deltas (absolute and percentage changes), identify top gaining and dropping landing pages, find queries with +10% impressions momentum, calculate the mobile device share shift, and render the complete comparative HTML dashboard Artifact.",
       "files": [
         "examples/current_week/traffic_overview.csv",
-        "examples/previous_week/traffic_overview.csv"
+        "examples/previous_week/traffic_overview.csv",
+        "examples/current_week/channel_grouping.csv",
+        "examples/previous_week/channel_grouping.csv"
+      ],
+      "expected_output": "The skill should parse both sets of files, compute deterministic week-over-week deltas (absolute and percentage changes), identify top gaining and dropping landing pages, find queries with +10% impressions momentum, calculate the mobile device share shift, and render the complete comparative HTML dashboard Artifact.",
+      "assertions": [
+        "Matches current week and prior week files by report signature",
+        "Calculates percentage delta: (Current - Prior) / Prior * 100",
+        "Flags top gaining landing page and sharpest dropping page",
+        "Filters search queries with +10% impressions momentum",
+        "Reports mobile vs desktop share shift in percentage points"
       ]
     },
     {
       "id": 3,
+      "name": "Resilient Partial-Data Fallback (General Movement Mode)",
       "prompt": "Only 3 of my scheduled reports arrived this week: traffic_overview.csv, channel_grouping.csv, and landing_pages.csv. Search console and device breakdown are missing. Can you still generate the weekly summary?",
-      "expected_output": "The skill should gracefully fall back to 'General Movement' mode, process the 3 available reports, mark Search Console and Device breakdown as 'Data unavailable' in the report, and still produce a functional HTML Artifact with the available KPIs.",
       "files": [
         "examples/current_week/traffic_overview.csv",
         "examples/current_week/channel_grouping.csv",
         "examples/current_week/landing_pages.csv"
+      ],
+      "expected_output": "The skill should gracefully fall back to 'General Movement' mode, process the 3 available reports, mark Search Console and Device breakdown as 'Data unavailable' in the report, and still produce a functional HTML Artifact with the available KPIs.",
+      "assertions": [
+        "Does not crash or abort when 3 files are missing",
+        "Logs a warning acknowledging missing reports",
+        "Adapts the HTML layout to render available sections cleanly",
+        "Displays 'Data unavailable' badges for missing modules"
       ]
     }
   ]

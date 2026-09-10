@@ -1,33 +1,68 @@
-# We Collapsed 2 Hours of Weekly Google Analytics Admin into One Monday Artifact
+# We Collapsed 2 Hours of Weekly Analytics Admin into One Monday Artifact
 
-> *"Whenever I'm stuck on whether to automate something, I ask one question: is this repetitive, or is this a decision? Repetitive gets automated. Decisions stay mine."*
+> *"Whenever I'm stuck on whether to automate something, I ask one question: is this repetitive, or is this a decision? Repetitive gets automated. Decisions stay mine."*  
+> — **Idea to Impact**
 
-A production-grade **Claude Skill** that turns scheduled Google Analytics 4 & Search Console CSV emails into an interactive, self-contained **HTML Artifact report**.
+A production-ready **Claude Skill** that turns 6 scheduled Google Analytics 4 & Search Console CSV emails into an interactive, self-contained **HTML Artifact report**.
 
-No Zapier. No n8n. No paid subscriptions. Just free scheduled emails, a Claude Skill, and an interactive dashboard that reveals what actually moved.
+No Zapier. No n8n. No monthly SaaS dashboard subscriptions. Just free native scheduled emails, a Claude Skill, and an interactive dashboard that reveals what actually moved in your business.
 
 ---
 
-## 💡 The Result: What We Achieved
+## 📸 The Result: What the Generated Artifact Looks Like
 
-- **Before**: 45–90 minutes every Monday clicking through GA4 tabs, downloading separate spreadsheets, calculating week-over-week % changes by hand, and missing the real story (e.g., *traffic fell 11%, but high-intent search clicks grew +18%*).
-- **After**: Drop 6 CSV email attachments into Claude, type `/weekly-analytics-report`, and get a complete, dark-mode visual Artifact dashboard with interactive Chart.js graphs, week-over-week deltas, and actionable insights in **under 30 seconds**.
+When you drop your 6 Monday CSV files into Claude and type `/weekly-analytics-report`, here is the interactive dashboard Claude generates in under 30 seconds:
+
+### 1. Executive Summary & Key Findings Callouts
+Claude extracts the real story behind headline numbers (e.g. why overall traffic dipped while search intent surged) and highlights key momentum drivers:
+![Executive Summary](./assets/header-summary.png)
+
+### 2. Traffic at a Glance & Daily Trend
+Interactive KPI cards with week-over-week deltas alongside a Chart.js daily session comparison line chart:
+![Traffic at a Glance](./assets/traffic-glance.png)
+
+### 3. Acquisition Channels Breakdown
+Horizontal bar chart comparing this week vs. prior week across Organic Search, Direct, Email, Paid, and Social:
+![Traffic by Channel](./assets/channels.png)
+
+### 4. Search Console Performance & Momentum Queries
+Surfaces queries gaining +10% or more in impressions, tracks average position, and calculates weighted rankings:
+![Search Performance](./assets/search-performance.png)
+
+### 5. Top Landing Pages & Engagement Shifts
+Ranks pages by sessions, flags top gainers vs. sharpest drops, and identifies pages with significant engagement changes:
+![Top Landing Pages](./assets/landing-pages.png)
+
+### 6. Device Split & Reading Depth
+Donut chart showing desktop vs. mobile share shift, plus pages with +20% engagement increases:
+![Device Breakdown and Engagement](./assets/devices-engagement.png)
+
+---
+
+## 🎯 What We Did vs. What Result It Achieved
+
+| The Old Way (Manual Overhead) | What We Did (The AI Workflow) | The Result Achieved |
+|:---|:---|:---|
+| **45–90 minutes every Monday** opening 6 GA4 tabs, exporting CSVs, and cross-referencing tabs. | Automated ingestion and parsing using a dedicated **Claude Skill** (`weekly-analytics-report`). | **Turned 90 minutes into a 30-second drag-and-drop routine.** |
+| **$50–$150/month SaaS dashboards** (Databox, AgencyAnalytics) showing noisy vanity charts. | Used free, native GA4 scheduled emails + Claude Artifacts with Chart.js. | **$600–$1,800/year saved** in software subscriptions with zero vendor lock-in. |
+| **Misleading headline panic**: Seeing an 11% traffic drop and cutting ad spend. | Claude cross-references channels: reveals that search clicks grew +18% and engagement rose +20%. | **Protects strategic judgment** by separating temporary channel dips from core growth. |
+| **Lost data history**: Downloaded spreadsheets get buried in Downloads or Gmail. | Archives raw CSVs + reports into dated historical folders (`~/analytics-reports/YYYY-MM-DD/`). | **Builds a compounding multi-week history** for long-term trend comparison. |
 
 ---
 
 ## 🧠 The Philosophy: Repetitive vs. Decision
 
 Most founders get trapped in one of two extremes:
-1. **Ignoring analytics altogether** because opening 6 spreadsheets feels like starting an entire research project from scratch.
-2. **Paying for bloated dashboard SaaS tools** ($50–$150/mo) that show 80 vanity metrics but don't explain *why* numbers shifted.
+1. **Ignoring analytics altogether** because opening 6 spreadsheets feels like starting a research project from scratch.
+2. **Paying for bloated automation platforms** (n8n, Make) that break every time Google changes an export format.
 
-Here is the split:
-- **Repetitive (Automated by Claude)**: Skipping GA4 metadata headers, matching columns, computing week-over-week percentage deltas, weighting search positions, ranking top landing pages, and generating charts.
-- **Decision (Kept by Founder)**: Deciding what to write next, which underperforming landing page to rewrite, and which search query with breakout momentum (+10% impressions) to target.
+Here is the split that makes this work:
+- **Repetitive (Automated by Claude)**: Skipping GA4 metadata pre-headers, parsing numbers, computing percentage deltas, weighting search positions, ranking top landing pages, and generating charts.
+- **Decision (Kept by the Founder)**: Deciding which underperforming landing page to rewrite, which breakout search query (+10% impressions) to target next, and what content to double down on.
 
 ---
 
-## 🛠️ The 6 Core Reports
+## 🛠️ The 6 Core Reports We Track
 
 Instead of drowning in GA4's infinite menus, this setup tracks 5 essential questions:
 
@@ -44,17 +79,25 @@ Instead of drowning in GA4's infinite menus, this setup tracks 5 essential quest
 
 ---
 
-## ⚠️ The "Quiet Failure" Gotchas We Solved
+## ⚠️ The 4 "Quiet Failure" Traps We Diagnosed & Solved
 
-1. **The GA4 Metadata Trap**: GA4 scheduled CSVs don't start with headers on line 1. They often begin with `# Date Range: ...` and blank metadata lines. The skill scans down dynamically until it locates the actual column signatures.
-2. **Zero-Division Crashes**: Week-over-week arithmetic crashes when prior week data is zero or missing. The skill enforces fallback defaults (`+100%` or `N/A`).
-3. **The Average Position Distortion**: Plain averages of search rankings are misleading (a position 5 on a query with 2 impressions shouldn't outweigh position 8 on a query with 5,000 impressions). The skill calculates **weighted average position**: `sum(clicks × position) / sum(clicks)`.
+In automation, the most dangerous failures aren't error messages—they are the quiet bugs that fail silently. Here are the 4 gotchas we engineered around:
+
+1. **The GA4 Floating Metadata Trap**:
+   GA4 scheduled CSVs don't place headers on line 1. They begin with `# Date Range: ...` and variable metadata rows. Standard CSV parsers crash or misread columns. Our skill dynamically scans rows until it matches the exact report signature.
+2. **The Zero-Division Arithmetic Crash**:
+   Week-over-week formulas (`(Current - Prior) / Prior`) crash when prior week data is 0 or when a new page appears. The skill enforces fallback defaults (`+100%` or `N/A`) so calculations remain mathematically sound.
+3. **The Average Position Distortion**:
+   A plain average of search positions is dangerously misleading: rank 5 on a query with 2 impressions shouldn't outweigh rank 8 on a query with 5,000 impressions. The skill calculates **weighted average position**:
+   $$\text{Weighted Position} = \frac{\sum(\text{Clicks} \times \text{Position})}{\sum\text{Clicks}}$$
+4. **Missing Report Resilience**:
+   If an email arrives with only 3 CSVs instead of 6, the skill doesn't error out. It logs the missing files, adjusts the layout, and renders a *General Movement* report with available data.
 
 ---
 
 ## 🚀 How to Set This Up in Your Claude Web (Same-Day)
 
-### Step 1: Add the Skill to Claude Web
+### Step 1: Add the Skill to Claude Web (2 minutes)
 
 1. Open [Claude.ai](https://claude.ai) and go to **Projects** > **New Project** (`Weekly Analytics`).
 2. Click **Set Project Instructions** and paste the entire contents of [`SKILL.md`](./SKILL.md).
@@ -64,11 +107,11 @@ Instead of drowning in GA4's infinite menus, this setup tracks 5 essential quest
    - [`references/metrics-reference.md`](./references/metrics-reference.md) (formula reference)
 4. Click **Save**.
 
-### Step 2: Schedule the 6 GA4 Emails (One-Time Setup)
+### Step 2: Schedule the 6 GA4 Emails (One-Time Setup, 10 minutes)
 
-Follow our step-by-step checklist in [`references/report-setup-guide.md`](./references/report-setup-guide.md) to configure Google Analytics to email you the 6 CSV reports automatically every Monday morning.
+Follow our step-by-step click guide in [`references/report-setup-guide.md`](./references/report-setup-guide.md) to configure Google Analytics to email you the 6 CSV reports automatically every Monday morning.
 
-### Step 3: Run Every Monday
+### Step 3: Run Every Monday (30 seconds)
 
 1. Download the 6 CSV attachments from your Monday email.
 2. Drag and drop them into your Claude Project chat.
@@ -86,6 +129,13 @@ Follow our step-by-step checklist in [`references/report-setup-guide.md`](./refe
 NL/
 ├── SKILL.md                          # The core Claude Skill instructions & prompt
 ├── README.md                         # This teardown and implementation guide
+├── assets/                           # Screenshots of the generated Artifact dashboard
+│   ├── header-summary.png
+│   ├── traffic-glance.png
+│   ├── channels.png
+│   ├── search-performance.png
+│   ├── landing-pages.png
+│   └── devices-engagement.png
 ├── evals/
 │   └── evals.json                    # Standardized evaluation test cases
 ├── references/
@@ -104,4 +154,4 @@ NL/
 
 ## 🧪 Testing with the Included Sample Data
 
-You don't need to wait until Monday to verify that it works. Drag the 6 sample files from [`examples/current_week/`](./examples/current_week) into your Claude chat right now to preview your interactive dashboard.
+You don't need to wait until Monday to verify that it works. Drag the 6 sample files from [`examples/current_week/`](./examples/current_week) into your Claude chat right now to preview your interactive dashboard. You can also view the pre-rendered [`examples/example-report.html`](./examples/example-report.html).
