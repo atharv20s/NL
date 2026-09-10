@@ -1,0 +1,18 @@
+# Google Analytics Data Export
+# Start date: 2026-08-25
+# End date: 2026-08-31
+# Report: Pages and Screens Engagement
+
+Page path + screen class,Views,Active Users,Average Engagement Time,Engagement Rate
+/blog/claude-skills-guide,341,321,258,0.71
+/blog/weekly-analytics-setup,312,291,218,0.68
+/blog/substack-growth-tips,289,271,231,0.66
+/blog/ai-newsletter-tools,421,398,178,0.62
+/,598,561,119,0.59
+/blog/google-search-console,241,224,167,0.64
+/about,212,178,71,0.39
+/pricing,156,141,92,0.49
+/resources,108,97,87,0.55
+/contact,87,61,38,0.36
+/blog/email-marketing-tips,178,163,189,0.66
+/blog/analytics-for-beginners,148,134,162,0.61

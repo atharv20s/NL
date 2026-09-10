@@ -1,0 +1,9 @@
+# Google Analytics Data Export
+# Start date: 2026-08-25
+# End date: 2026-08-31
+# Report: Device Category Breakdown
+
+Device category,Sessions,Active Users,New Users,Bounce Rate
+desktop,1076,1021,708,0.37
+mobile,612,581,419,0.49
+tablet,66,63,43,0.44

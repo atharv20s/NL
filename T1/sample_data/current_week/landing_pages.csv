@@ -1,0 +1,16 @@
+# Google Analytics Data Export
+# Start date: 2026-09-01
+# End date: 2026-09-07
+# Report: Landing Pages
+
+Landing page + query string,Sessions,New Users,Bounce Rate,Average Session Duration
+/,398,281,0.38,132
+/blog/ai-newsletter-tools,287,234,0.29,201
+/blog/weekly-analytics-setup,241,198,0.31,245
+/about,143,88,0.52,67
+/blog/substack-growth-tips,198,162,0.27,278
+/contact,87,41,0.61,42
+/blog/claude-skills-guide,163,141,0.25,312
+/pricing,94,67,0.48,88
+/blog/google-search-console,121,103,0.33,198
+/resources,54,38,0.43,94

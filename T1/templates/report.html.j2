@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Analytics — {{ week_date }}</title>
+  <meta name="description" content="Weekly Google Analytics and Search Console report for {{ site_name }}.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #21263a;
+      --border: #2a2d3a; --text: #e2e8f0; --muted: #8b95a8;
+      --accent: #4f8ef7; --accent2: #818cf8;
+      --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+      --radius: 12px; --gap: 1.5rem;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6; padding: var(--gap);
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--gap); }
+    .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: var(--gap); }
+    @media(max-width:900px){ .grid-5{grid-template-columns:repeat(3,1fr)} .grid-3{grid-template-columns:1fr 1fr} }
+    @media(max-width:600px){ .grid-2,.grid-3,.grid-5{grid-template-columns:1fr} }
+
+    /* Header */
+    .header {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      flex-wrap:wrap; gap:1rem; margin-bottom:2.5rem;
+      padding-bottom:1.5rem; border-bottom:1px solid var(--border);
+    }
+    .header h1 {
+      font-size:1.6rem; font-weight:700;
+      background:linear-gradient(135deg,#fff 0%,var(--accent) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .header .subtitle { color:var(--muted); font-size:.9rem; margin-top:.25rem; }
+    .header-right { text-align:right; color:var(--muted); font-size:.8rem; }
+    {% if not has_prior_data %}
+    .first-run-banner {
+      background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3);
+      border-radius:var(--radius); padding:1rem 1.25rem; margin-bottom:2rem;
+      color:var(--amber); font-size:.875rem;
+    }
+    {% endif %}
+
+    /* Sections */
+    .section { margin-bottom:3rem; }
+    .section-title {
+      font-size:.9rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--accent); margin-bottom:1.25rem;
+      display:flex; align-items:center; gap:.5rem;
+    }
+    .section-title::after { content:""; flex:1; height:1px; background:var(--border); }
+
+    /* Cards */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
+    .kpi-card { text-align:center; }
+    .kpi-label { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .kpi-value { font-size:1.9rem; font-weight:700; margin:.3rem 0 .2rem; }
+    .kpi-change { font-size:.82rem; font-weight:600; }
+    .kpi-change.up   { color:var(--green); }
+    .kpi-change.down { color:var(--red); }
+    .kpi-change.neutral { color:var(--muted); }
+
+    /* Summary */
+    .summary-box {
+      background:var(--surface); border:1px solid var(--border);
+      border-left:4px solid var(--accent); border-radius:var(--radius);
+      padding:1.5rem; line-height:1.85;
+    }
+    .summary-box p+p { margin-top:1rem; }
+    .summary-box strong { color:var(--accent); }
+    .findings-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-top:1.25rem; }
+    @media(max-width:700px){ .findings-grid{grid-template-columns:1fr} }
+    .findings-box {
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.25rem;
+    }
+    .findings-box h4 { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:.6rem; }
+    .findings-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+    .findings-box li { font-size:.875rem; display:flex; gap:.5rem; }
+    .findings-box li::before { content:"→"; color:var(--accent); flex-shrink:0; }
+    .action-box {
+      margin-top:1.25rem; background:rgba(79,142,247,.08);
+      border:1px solid rgba(79,142,247,.25); border-radius:var(--radius);
+      padding:1rem 1.25rem;
+    }
+    .action-box .label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); margin-bottom:.35rem; }
+    .action-box p { font-size:.9rem; }
+
+    /* Chart wrapper */
+    .chart-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
+    .chart-title { font-size:.82rem; font-weight:600; color:var(--muted); margin-bottom:1rem; }
+
+    /* Tables */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; min-width:500px; }
+    thead th {
+      background:rgba(79,142,247,.07); color:var(--muted); font-size:.72rem;
+      font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+      padding:.7rem 1rem; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap;
+    }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:rgba(255,255,255,.025); }
+    tbody td { padding:.6rem 1rem; }
+    td.positive { color:var(--green); font-weight:600; }
+    td.negative { color:var(--red); font-weight:600; }
+    td.neutral  { color:var(--muted); }
+    td.mono     { font-family:monospace; font-size:.8rem; color:var(--accent); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    td.rank     { color:var(--muted); font-size:.75rem; width:2rem; }
+
+    /* Callout */
+    .callout { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.25rem; }
+    .callout-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:.6rem; }
+    .callout ul { list-style:none; display:flex; flex-direction:column; gap:.4rem; }
+    .callout li { display:flex; justify-content:space-between; align-items:center; font-size:.875rem; gap:.5rem; }
+    .callout .page { font-family:monospace; font-size:.8rem; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+    .tag { font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:999px; white-space:nowrap; }
+    .tag.gain { background:rgba(34,197,94,.15); color:var(--green); }
+    .tag.drop { background:rgba(239,68,68,.15); color:var(--red); }
+    .tag.grow { background:rgba(79,142,247,.15); color:var(--accent); }
+
+    /* Footer */
+    .footer {
+      margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);
+      color:var(--muted); font-size:.78rem;
+      display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+    }
+    code { background:var(--surface2); padding:.1rem .35rem; border-radius:4px; font-size:.8rem; }
+    .no-data { color:var(--muted); font-style:italic; font-size:.875rem; padding:.75rem 1rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <h1>📊 {{ site_name }} — Weekly Report</h1>
+    <div class="subtitle">{{ date_range }} &nbsp;·&nbsp; Generated {{ generated_at }}</div>
+  </div>
+  <div class="header-right">
+    Powered by Google Analytics &amp; Search Console<br>
+    <span style="color:var(--accent)">{{ week_date }}</span>
+  </div>
+</header>
+
+{% if not has_prior_data %}
+<div class="first-run-banner">
+  ⚠️ <strong>First run detected.</strong> No previous week data found in <code>{{ data_root }}</code>.
+  Week-over-week comparisons are unavailable — run again next week to see trends.
+</div>
+{% endif %}
+
+<!-- SECTION 1: SUMMARY -->
+<section class="section">
+  <div class="section-title">📝 Weekly Summary</div>
+  <div class="summary-box">
+    {% for para in summary_paragraphs %}
+      <p>{{ para | replace("**", "<strong>") | replace("**", "</strong>") }}</p>
+    {% endfor %}
+    <div class="findings-grid">
+      <div class="findings-box">
+        <h4>🔑 Key Findings</h4>
+        <ul>
+          {% for f in key_findings %}<li>{{ f }}</li>{% endfor %}
+          {% if not key_findings %}<li>No findings available.</li>{% endif %}
+        </ul>
+      </div>
+      {% if anomalies %}
+      <div class="findings-box">
+        <h4>⚠️ Worth Investigating</h4>
+        <ul>
+          {% for a in anomalies %}<li>{{ a }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+    <div class="action-box">
+      <div class="label">📌 Action item this week</div>
+      <p>{{ action_item }}</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: TRAFFIC -->
+<section class="section">
+  <div class="section-title">🚦 Traffic at a Glance</div>
+  <div class="grid-5" style="margin-bottom:var(--gap)">
+    {% for kpi in traffic_kpis %}
+    <div class="card kpi-card">
+      <div class="kpi-label">{{ kpi.label }}</div>
+      <div class="kpi-value">{{ kpi.formatted }}</div>
+      <div class="kpi-change {{ kpi.direction }}">{{ kpi.change_formatted }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">Sessions — This Week vs Comparison Week</div>
+    <canvas id="sessionsChart" height="90"></canvas>
+  </div>
+</section>
+
+<!-- SECTION 3: CHANNELS -->
+<section class="section">
+  <div class="section-title">📣 Traffic by Channel</div>
+  <div class="grid-2">
+    <div class="chart-wrap">
+      <div class="chart-title">Sessions by Channel (this week vs comparison)</div>
+      <canvas id="channelChart" height="220"></canvas>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Channel</th><th>This Week</th><th>Last Week</th><th>Change</th><th>%</th></tr></thead>
+        <tbody>
+          {% for ch in channels %}
+          <tr>
+            <td>{{ ch.channel }}</td>
+            <td>{{ "{:,.0f}".format(ch.sessions_tw) }}</td>
+            <td>{{ "{:,.0f}".format(ch.sessions_lw) if has_prior_data else "—" }}</td>
+            <td class="{{ 'positive' if ch.change >= 0 else 'negative' }}">
+              {{ ("+" if ch.change >= 0 else "") + "{:,.0f}".format(ch.change) if has_prior_data else "—" }}
+            </td>
+            <td class="{{ 'positive' if (ch.pct_change or 0) >= 0 else 'negative' }}">
+              {{ (("+" if (ch.pct_change or 0) >= 0 else "") + "{:.1f}%".format(ch.pct_change)) if ch.pct_change is not none else "—" }}
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not channels %}<tr><td colspan="5" class="no-data">No channel data available.</td></tr>{% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: SEARCH -->
+<section class="section">
+  <div class="section-title">🔍 Search Performance</div>
+  <div class="grid-3" style="margin-bottom:var(--gap)">
+    {% for kpi in search_kpis %}
+    <div class="card kpi-card">
+      <div class="kpi-label">{{ kpi.label }}</div>
+      <div class="kpi-value">{{ kpi.formatted }}</div>
+      <div class="kpi-change {{ kpi.direction }}">{{ kpi.change_formatted }}</div>
+    </div>
+    {% endfor %}
+    {% if not search_kpis %}
+    <div class="card"><div class="no-data">No search data available.</div></div>
+    {% endif %}
+  </div>
+
+  {% if growing_queries %}
+  <div class="callout" style="margin-bottom:var(--gap)">
+    <div class="callout-title">📈 Queries Gaining Momentum (impressions +10%+)</div>
+    <ul>
+      {% for q in growing_queries %}
+      <li>
+        <span class="page">"{{ q.query }}"</span>
+        <span class="tag grow">{{ ("+" if (q.impression_pct_change or 0) >= 0 else "") + "{:.0f}%".format(q.impression_pct_change or 0) }} impr.</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Pos.</th></tr></thead>
+      <tbody>
+        {% for q in top_queries %}
+        <tr>
+          <td class="rank">{{ loop.index }}</td>
+          <td>{{ q.query }}</td>
+          <td>{{ "{:,.0f}".format(q.clicks) }}</td>
+          <td>{{ "{:,.0f}".format(q.impressions) }}</td>
+          <td>{{ "{:.2f}%".format(q.ctr * 100) }}</td>
+          <td>{{ "{:.1f}".format(q.avg_position) }}</td>
+        </tr>
+        {% endfor %}
+        {% if not top_queries %}<tr><td colspan="6" class="no-data">No search query data available.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 5: LANDING PAGES -->
+<section class="section">
+  <div class="section-title">🚪 Top Landing Pages</div>
+  <div class="grid-2" style="margin-bottom:var(--gap)">
+    <div class="callout">
+      <div class="callout-title">🔺 Biggest Gainers</div>
+      <ul>
+        {% for p in biggest_gainers %}
+        {% if p.change > 0 %}
+        <li>
+          <span class="page">{{ p.page }}</span>
+          <span class="tag gain">+{{ "{:,.0f}".format(p.change) }}</span>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if not biggest_gainers %}<li><span class="no-data">No comparison data.</span></li>{% endif %}
+      </ul>
+    </div>
+    <div class="callout">
+      <div class="callout-title">🔻 Biggest Drops</div>
+      <ul>
+        {% for p in biggest_droppers %}
+        {% if p.change < 0 %}
+        <li>
+          <span class="page">{{ p.page }}</span>
+          <span class="tag drop">{{ "{:,.0f}".format(p.change) }}</span>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% if not biggest_droppers %}<li><span class="no-data">No comparison data.</span></li>{% endif %}
+      </ul>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Page</th><th>Sessions</th><th>New Users</th><th>Change</th><th>%</th></tr></thead>
+      <tbody>
+        {% for p in top_landing_pages %}
+        <tr>
+          <td class="rank">{{ loop.index }}</td>
+          <td class="mono">{{ p.page }}</td>
+          <td>{{ "{:,.0f}".format(p.sessions_tw) }}</td>
+          <td>{{ "{:,.0f}".format(p.new_users) }}</td>
+          <td class="{{ 'positive' if p.change >= 0 else 'negative' }}">
+            {{ ("+" if p.change >= 0 else "") + "{:,.0f}".format(p.change) if has_prior_data else "—" }}
+          </td>
+          <td class="{{ 'positive' if (p.pct_change or 0) >= 0 else 'negative' }}">
+            {{ (("+" if (p.pct_change or 0) >= 0 else "") + "{:.1f}%".format(p.pct_change)) if p.pct_change is not none else "—" }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not top_landing_pages %}<tr><td colspan="6" class="no-data">No landing page data.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 6: DEVICES -->
+<section class="section">
+  <div class="section-title">📱 Device Split</div>
+  <div style="max-width:380px; margin:0 auto">
+    <div class="chart-wrap">
+      <div class="chart-title">Sessions by Device — This Week</div>
+      <canvas id="deviceChart" height="240"></canvas>
+    </div>
+  </div>
+  {% if has_prior_data %}
+  <div style="max-width:500px; margin:1.25rem auto 0">
+    <div class="callout">
+      <div class="callout-title">Week-over-week device share shift</div>
+      <ul>
+        {% for d in devices %}
+        <li>
+          <span><strong>{{ d.device_category }}</strong> — {{ d.share_pct }}% this week</span>
+          <span class="tag {{ 'gain' if d.share_shift >= 0 else 'drop' }}">
+            {{ ("+" if d.share_shift >= 0 else "") }}{{ d.share_shift }}pp
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<!-- SECTION 7: ENGAGEMENT -->
+<section class="section">
+  <div class="section-title">⏱️ Page Engagement</div>
+  {% if engagement_improved or engagement_declined %}
+  <div class="callout" style="margin-bottom:var(--gap)">
+    <div class="callout-title">Significant Changes (±20%+ in avg engagement time)</div>
+    <ul>
+      {% for p in engagement_improved %}
+      <li>
+        <span class="page">{{ p.page }}</span>
+        <span class="tag gain">+{{ "{:.0f}%".format(p.engagement_time_change or 0) }}</span>
+      </li>
+      {% endfor %}
+      {% for p in engagement_declined %}
+      <li>
+        <span class="page">{{ p.page }}</span>
+        <span class="tag drop">{{ "{:.0f}%".format(p.engagement_time_change or 0) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Page</th><th>Avg Engagement</th><th>Views</th><th>vs Site Avg</th><th>WoW Change</th></tr></thead>
+      <tbody>
+        {% for p in top_engaged_pages %}
+        <tr>
+          <td class="rank">{{ loop.index }}</td>
+          <td class="mono">{{ p.page }}</td>
+          <td>{{ format_duration(p.avg_engagement_time) }}</td>
+          <td>{{ "{:,.0f}".format(p.views) }}</td>
+          <td class="{{ 'positive' if p.vs_site_avg >= 0 else 'negative' }}">
+            {{ ("+" if p.vs_site_avg >= 0 else "") }}{{ format_duration(p.vs_site_avg | abs) }}
+          </td>
+          <td class="{{ 'positive' if (p.engagement_time_change or 0) >= 0 else 'negative' if p.engagement_time_change is not none else 'neutral' }}">
+            {{ (("+" if (p.engagement_time_change or 0) >= 0 else "") + "{:.1f}%".format(p.engagement_time_change)) if p.engagement_time_change is not none else "—" }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not top_engaged_pages %}<tr><td colspan="6" class="no-data">No engagement data.</td></tr>{% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <span>Data: Google Analytics 4 &amp; Search Console · Scheduled CSV exports</span>
+  <span>Saved: <code>{{ data_root }}</code></span>
+</footer>
+
+</div><!-- /.container -->
+
+<script>
+Chart.defaults.color = '#8b95a8';
+Chart.defaults.borderColor = '#2a2d3a';
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+/* Sessions chart */
+const sessLabels = {{ sessions_day_labels | tojson }};
+const sessTW     = {{ sessions_by_day_tw | tojson }};
+const sessLW     = {{ sessions_by_day_lw | tojson }};
+const sessDatasets = [{
+  label: 'This Week',
+  data: sessTW, borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.1)',
+  tension:.4, fill:true, pointRadius:4, pointBackgroundColor:'#4f8ef7'
+}];
+{% if has_prior_data %}
+sessDatasets.push({
+  label: 'Comparison Week',
+  data: sessLW, borderColor:'#818cf8', backgroundColor:'rgba(129,140,248,.05)',
+  tension:.4, fill:true, borderDash:[5,4], pointRadius:3, pointBackgroundColor:'#818cf8'
+});
+{% endif %}
+new Chart(document.getElementById('sessionsChart'), {
+  type:'line', data:{ labels:sessLabels, datasets:sessDatasets },
+  options:{ responsive:true, plugins:{legend:{position:'top'}},
+    scales:{ y:{grid:{color:'#2a2d3a'},beginAtZero:false}, x:{grid:{color:'#2a2d3a'}} } }
+});
+
+/* Channel chart */
+const chLabels = {{ channel_labels | tojson }};
+const chTW     = {{ channel_tw_data | tojson }};
+const chLW     = {{ channel_lw_data | tojson }};
+const chDatasets = [{
+  label:'This Week', data:chTW, backgroundColor:'rgba(79,142,247,.85)', borderRadius:4
+}];
+{% if has_prior_data %}
+chDatasets.push({ label:'Comparison', data:chLW, backgroundColor:'rgba(129,140,248,.4)', borderRadius:4 });
+{% endif %}
+new Chart(document.getElementById('channelChart'), {
+  type:'bar', data:{ labels:chLabels, datasets:chDatasets },
+  options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'top'}},
+    scales:{ x:{grid:{color:'#2a2d3a'},beginAtZero:true}, y:{grid:{color:'transparent'}} } }
+});
+
+/* Device donut */
+new Chart(document.getElementById('deviceChart'), {
+  type:'doughnut',
+  data:{
+    labels: {{ device_labels | tojson }},
+    datasets:[{ data:{{ device_data | tojson }},
+      backgroundColor:['#4f8ef7','#22c55e','#f59e0b'],
+      borderColor:'#1a1d27', borderWidth:3 }]
+  },
+  options:{ responsive:true, cutout:'65%',
+    plugins:{ legend:{position:'bottom'},
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } } } }
+});
+</script>
+</body>
+</html>

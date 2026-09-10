@@ -1,0 +1,13 @@
+# Google Analytics Data Export
+# Start date: 2026-08-25
+# End date: 2026-08-31
+# Report: Traffic Acquisition by Channel
+
+Session default channel group,Sessions,New Users,Bounce Rate,Engagement Rate,Active Users
+Organic Search,856,601,0.34,0.66,829
+Direct,341,221,0.39,0.61,328
+Email,143,68,0.31,0.69,138
+Organic Social,98,78,0.53,0.47,95
+Referral,112,82,0.42,0.58,108
+Paid Search,122,96,0.38,0.62,118
+(Other),82,61,0.54,0.46,79

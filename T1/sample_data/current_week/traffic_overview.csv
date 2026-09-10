@@ -1,0 +1,13 @@
+# Google Analytics Data Export
+# Start date: 2026-09-01
+# End date: 2026-09-07
+# Report: Traffic Overview
+
+Date,Sessions,Active Users,New Users,Bounce Rate,Engagement Rate,Average Session Duration
+20260901,312,289,201,0.38,0.62,142
+20260902,341,318,224,0.35,0.65,158
+20260903,287,265,182,0.41,0.59,131
+20260904,298,277,193,0.39,0.61,148
+20260905,256,238,166,0.44,0.56,122
+20260906,189,175,121,0.46,0.54,108
+20260907,203,188,133,0.43,0.57,119
