@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Analytics — 2026-09-08</title>
+  <meta name="description" content="Weekly Google Analytics and Search Console report for My Site.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #21263a;
+      --border: #2a2d3a; --text: #e2e8f0; --muted: #8b95a8;
+      --accent: #4f8ef7; --accent2: #818cf8;
+      --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+      --radius: 12px; --gap: 1.5rem;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.6; padding: var(--gap);
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--gap); }
+    .grid-5 { display: grid; grid-template-columns: repeat(5,1fr); gap: var(--gap); }
+    @media(max-width:900px){ .grid-5{grid-template-columns:repeat(3,1fr)} .grid-3{grid-template-columns:1fr 1fr} }
+    @media(max-width:600px){ .grid-2,.grid-3,.grid-5{grid-template-columns:1fr} }
+
+    /* Header */
+    .header {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      flex-wrap:wrap; gap:1rem; margin-bottom:2.5rem;
+      padding-bottom:1.5rem; border-bottom:1px solid var(--border);
+    }
+    .header h1 {
+      font-size:1.6rem; font-weight:700;
+      background:linear-gradient(135deg,#fff 0%,var(--accent) 100%);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    }
+    .header .subtitle { color:var(--muted); font-size:.9rem; margin-top:.25rem; }
+    .header-right { text-align:right; color:var(--muted); font-size:.8rem; }
+    
+
+    /* Sections */
+    .section { margin-bottom:3rem; }
+    .section-title {
+      font-size:.9rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.08em; color:var(--accent); margin-bottom:1.25rem;
+      display:flex; align-items:center; gap:.5rem;
+    }
+    .section-title::after { content:""; flex:1; height:1px; background:var(--border); }
+
+    /* Cards */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
+    .kpi-card { text-align:center; }
+    .kpi-label { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .kpi-value { font-size:1.9rem; font-weight:700; margin:.3rem 0 .2rem; }
+    .kpi-change { font-size:.82rem; font-weight:600; }
+    .kpi-change.up   { color:var(--green); }
+    .kpi-change.down { color:var(--red); }
+    .kpi-change.neutral { color:var(--muted); }
+
+    /* Summary */
+    .summary-box {
+      background:var(--surface); border:1px solid var(--border);
+      border-left:4px solid var(--accent); border-radius:var(--radius);
+      padding:1.5rem; line-height:1.85;
+    }
+    .summary-box p+p { margin-top:1rem; }
+    .summary-box strong { color:var(--accent); }
+    .findings-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap); margin-top:1.25rem; }
+    @media(max-width:700px){ .findings-grid{grid-template-columns:1fr} }
+    .findings-box {
+      background:var(--surface2); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1rem 1.25rem;
+    }
+    .findings-box h4 { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:.6rem; }
+    .findings-box ul { list-style:none; display:flex; flex-direction:column; gap:.35rem; }
+    .findings-box li { font-size:.875rem; display:flex; gap:.5rem; }
+    .findings-box li::before { content:"→"; color:var(--accent); flex-shrink:0; }
+    .action-box {
+      margin-top:1.25rem; background:rgba(79,142,247,.08);
+      border:1px solid rgba(79,142,247,.25); border-radius:var(--radius);
+      padding:1rem 1.25rem;
+    }
+    .action-box .label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); margin-bottom:.35rem; }
+    .action-box p { font-size:.9rem; }
+
+    /* Chart wrapper */
+    .chart-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
+    .chart-title { font-size:.82rem; font-weight:600; color:var(--muted); margin-bottom:1rem; }
+
+    /* Tables */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.85rem; min-width:500px; }
+    thead th {
+      background:rgba(79,142,247,.07); color:var(--muted); font-size:.72rem;
+      font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+      padding:.7rem 1rem; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap;
+    }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:rgba(255,255,255,.025); }
+    tbody td { padding:.6rem 1rem; }
+    td.positive { color:var(--green); font-weight:600; }
+    td.negative { color:var(--red); font-weight:600; }
+    td.neutral  { color:var(--muted); }
+    td.mono     { font-family:monospace; font-size:.8rem; color:var(--accent); max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    td.rank     { color:var(--muted); font-size:.75rem; width:2rem; }
+
+    /* Callout */
+    .callout { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.25rem; }
+    .callout-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin-bottom:.6rem; }
+    .callout ul { list-style:none; display:flex; flex-direction:column; gap:.4rem; }
+    .callout li { display:flex; justify-content:space-between; align-items:center; font-size:.875rem; gap:.5rem; }
+    .callout .page { font-family:monospace; font-size:.8rem; color:var(--accent); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+    .tag { font-size:.7rem; font-weight:700; padding:.15rem .5rem; border-radius:999px; white-space:nowrap; }
+    .tag.gain { background:rgba(34,197,94,.15); color:var(--green); }
+    .tag.drop { background:rgba(239,68,68,.15); color:var(--red); }
+    .tag.grow { background:rgba(79,142,247,.15); color:var(--accent); }
+
+    /* Footer */
+    .footer {
+      margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);
+      color:var(--muted); font-size:.78rem;
+      display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem;
+    }
+    code { background:var(--surface2); padding:.1rem .35rem; border-radius:4px; font-size:.8rem; }
+    .no-data { color:var(--muted); font-style:italic; font-size:.875rem; padding:.75rem 1rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <h1>📊 My Site — Weekly Report</h1>
+    <div class="subtitle">Week of 2026-09-08  ·  vs. (manual) &nbsp;·&nbsp; Generated 2026-09-11 02:25</div>
+  </div>
+  <div class="header-right">
+    Powered by Google Analytics &amp; Search Console<br>
+    <span style="color:var(--accent)">2026-09-08</span>
+  </div>
+</header>
+
+
+
+<!-- SECTION 1: SUMMARY -->
+<section class="section">
+  <div class="section-title">📝 Weekly Summary</div>
+  <div class="summary-box">
+    
+      <p>This week the site recorded <strong>1,886 sessions</strong> (vs week of (manual)). That represents a +7.5% change from the comparison period. The largest traffic source was <strong>Organic Search</strong> with 891 sessions. That channel gained +4.1% week-over-week. Bounce rate improved (-4.6%) to 40.2%. Average session duration grew (+14.3%) to 2:16.</p>
+    
+      <p>From Search Console: the site received <strong>1,318 organic clicks</strong> from <strong>24,681 impressions</strong> this week. Clicks grew +18.7% and impressions grew +16.7%. Average search position improved from 8.8 to 9.3. 19 queries gained 10%+ in impressions this week: "best ai newsletter tools", "claude code skills guide", "substack growth tips 2026".</p>
+    
+      <p>The most-visited landing page was <strong>/</strong> with 398 sessions. The biggest session gain was <strong>/blog/ai-newsletter-tools</strong> (+44 sessions, +18.1%). The sharpest drop was <strong>/</strong> (-14 sessions, -3.4%). The most engaging page was <strong>/blog/claude-skills-guide</strong> with an average engagement time of 5m 12s.</p>
+    
+      <p>Mobile accounted for <strong>36.4%</strong> of sessions. Mobile share moved up 1.5 percentage points.</p>
+    
+    <div class="findings-grid">
+      <div class="findings-box">
+        <h4>🔑 Key Findings</h4>
+        <ul>
+          <li>Sessions grew +7.5% to 1,886.</li><li>19 search queries gained 10%+ in impressions.</li><li>Top gaining page: /blog/ai-newsletter-tools (+44 sessions).</li><li>2 page(s) saw 20%+ improvement in engagement time.</li>
+          
+        </ul>
+      </div>
+      
+    </div>
+    <div class="action-box">
+      <div class="label">📌 Action item this week</div>
+      <p>The query "best ai newsletter tools" gained +12.1% in impressions this week. Consider creating or optimising a page that targets this topic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: TRAFFIC -->
+<section class="section">
+  <div class="section-title">🚦 Traffic at a Glance</div>
+  <div class="grid-5" style="margin-bottom:var(--gap)">
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Sessions</div>
+      <div class="kpi-value">1,886</div>
+      <div class="kpi-change up">+7.5%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Users</div>
+      <div class="kpi-value">1,750</div>
+      <div class="kpi-change up">+7.5%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">New Users</div>
+      <div class="kpi-value">1,220</div>
+      <div class="kpi-change up">+5.9%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Avg Session</div>
+      <div class="kpi-value">2:16</div>
+      <div class="kpi-change up">+14.3%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Bounce Rate</div>
+      <div class="kpi-value">40.2%</div>
+      <div class="kpi-change up">-4.6%</div>
+    </div>
+    
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">Sessions — This Week vs Comparison Week</div>
+    <canvas id="sessionsChart" height="90"></canvas>
+  </div>
+</section>
+
+<!-- SECTION 3: CHANNELS -->
+<section class="section">
+  <div class="section-title">📣 Traffic by Channel</div>
+  <div class="grid-2">
+    <div class="chart-wrap">
+      <div class="chart-title">Sessions by Channel (this week vs comparison)</div>
+      <canvas id="channelChart" height="220"></canvas>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Channel</th><th>This Week</th><th>Last Week</th><th>Change</th><th>%</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>Organic Search</td>
+            <td>891</td>
+            <td>856</td>
+            <td class="positive">
+              +35
+            </td>
+            <td class="positive">
+              +4.1%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Direct</td>
+            <td>312</td>
+            <td>341</td>
+            <td class="negative">
+              -29
+            </td>
+            <td class="negative">
+              -8.5%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Email</td>
+            <td>187</td>
+            <td>143</td>
+            <td class="positive">
+              +44
+            </td>
+            <td class="positive">
+              +30.8%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Paid Search</td>
+            <td>155</td>
+            <td>122</td>
+            <td class="positive">
+              +33
+            </td>
+            <td class="positive">
+              +27.0%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Organic Social</td>
+            <td>143</td>
+            <td>98</td>
+            <td class="positive">
+              +45
+            </td>
+            <td class="positive">
+              +45.9%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>(Other)</td>
+            <td>100</td>
+            <td>82</td>
+            <td class="positive">
+              +18
+            </td>
+            <td class="positive">
+              +22.0%
+            </td>
+          </tr>
+          
+          <tr>
+            <td>Referral</td>
+            <td>98</td>
+            <td>112</td>
+            <td class="negative">
+              -14
+            </td>
+            <td class="negative">
+              -12.5%
+            </td>
+          </tr>
+          
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 4: SEARCH -->
+<section class="section">
+  <div class="section-title">🔍 Search Performance</div>
+  <div class="grid-3" style="margin-bottom:var(--gap)">
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Total Clicks</div>
+      <div class="kpi-value">1,318</div>
+      <div class="kpi-change up">+18.7%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Impressions</div>
+      <div class="kpi-value">24,681</div>
+      <div class="kpi-change up">+16.7%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">CTR</div>
+      <div class="kpi-value">5.34%</div>
+      <div class="kpi-change up">+1.8%</div>
+    </div>
+    
+    <div class="card kpi-card">
+      <div class="kpi-label">Avg Position</div>
+      <div class="kpi-value">9.3</div>
+      <div class="kpi-change up">-5.5%</div>
+    </div>
+    
+    
+  </div>
+
+  
+  <div class="callout" style="margin-bottom:var(--gap)">
+    <div class="callout-title">📈 Queries Gaining Momentum (impressions +10%+)</div>
+    <ul>
+      
+      <li>
+        <span class="page">"best ai newsletter tools"</span>
+        <span class="tag grow">+12% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"claude code skills guide"</span>
+        <span class="tag grow">+13% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"substack growth tips 2026"</span>
+        <span class="tag grow">+16% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"weekly analytics automation"</span>
+        <span class="tag grow">+19% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"ai writing tools newsletter"</span>
+        <span class="tag grow">+18% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"ai tools for bloggers"</span>
+        <span class="tag grow">+22% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"automate google analytics reports"</span>
+        <span class="tag grow">+13% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"google analytics 4 tutorial"</span>
+        <span class="tag grow">+16% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"best email newsletter platforms"</span>
+        <span class="tag grow">+16% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"claude ai skills setup"</span>
+        <span class="tag grow">+18% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"substack seo tips"</span>
+        <span class="tag grow">+18% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"google search console tutorial"</span>
+        <span class="tag grow">+18% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"ai marketing automation 2026"</span>
+        <span class="tag grow">+28% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"newsletter marketing strategy"</span>
+        <span class="tag grow">+13% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"newsletter subscriber growth"</span>
+        <span class="tag grow">+22% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"how to read google analytics"</span>
+        <span class="tag grow">+17% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"weekly report automation"</span>
+        <span class="tag grow">+26% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"newsletter analytics dashboard"</span>
+        <span class="tag grow">+26% impr.</span>
+      </li>
+      
+      <li>
+        <span class="page">"content marketing analytics"</span>
+        <span class="tag grow">+21% impr.</span>
+      </li>
+      
+    </ul>
+  </div>
+  
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Query</th><th>Clicks</th><th>Impressions</th><th>CTR</th><th>Avg Pos.</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td class="rank">1</td>
+          <td>best ai newsletter tools</td>
+          <td>187</td>
+          <td>2,341</td>
+          <td>7.99%</td>
+          <td>4.2</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">2</td>
+          <td>claude code skills guide</td>
+          <td>143</td>
+          <td>1,876</td>
+          <td>7.62%</td>
+          <td>5.1</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">3</td>
+          <td>substack growth tips 2026</td>
+          <td>112</td>
+          <td>1,654</td>
+          <td>6.77%</td>
+          <td>5.9</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">4</td>
+          <td>weekly analytics automation</td>
+          <td>98</td>
+          <td>1,432</td>
+          <td>6.84%</td>
+          <td>6.8</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">5</td>
+          <td>ai writing tools newsletter</td>
+          <td>89</td>
+          <td>1,543</td>
+          <td>5.77%</td>
+          <td>9.2</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">6</td>
+          <td>google analytics scheduled reports</td>
+          <td>76</td>
+          <td>1,187</td>
+          <td>6.40%</td>
+          <td>7.3</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">7</td>
+          <td>ai tools for bloggers</td>
+          <td>71</td>
+          <td>1,876</td>
+          <td>3.78%</td>
+          <td>11.3</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">8</td>
+          <td>automate google analytics reports</td>
+          <td>65</td>
+          <td>987</td>
+          <td>6.59%</td>
+          <td>8.1</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">9</td>
+          <td>google analytics 4 tutorial</td>
+          <td>61</td>
+          <td>1,654</td>
+          <td>3.69%</td>
+          <td>13.4</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">10</td>
+          <td>best email newsletter platforms</td>
+          <td>55</td>
+          <td>1,432</td>
+          <td>3.84%</td>
+          <td>11.8</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">11</td>
+          <td>claude ai skills setup</td>
+          <td>54</td>
+          <td>876</td>
+          <td>6.16%</td>
+          <td>7.8</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">12</td>
+          <td>substack seo tips</td>
+          <td>45</td>
+          <td>1,123</td>
+          <td>4.01%</td>
+          <td>10.6</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">13</td>
+          <td>google search console tutorial</td>
+          <td>43</td>
+          <td>1,098</td>
+          <td>3.91%</td>
+          <td>12.4</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">14</td>
+          <td>ai marketing automation 2026</td>
+          <td>41</td>
+          <td>876</td>
+          <td>4.68%</td>
+          <td>10.2</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">15</td>
+          <td>newsletter marketing strategy</td>
+          <td>38</td>
+          <td>1,234</td>
+          <td>3.08%</td>
+          <td>14.1</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">16</td>
+          <td>newsletter subscriber growth</td>
+          <td>36</td>
+          <td>876</td>
+          <td>4.11%</td>
+          <td>11.7</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">17</td>
+          <td>how to read google analytics</td>
+          <td>33</td>
+          <td>987</td>
+          <td>3.34%</td>
+          <td>13.8</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">18</td>
+          <td>weekly report automation</td>
+          <td>29</td>
+          <td>654</td>
+          <td>4.43%</td>
+          <td>9.4</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">19</td>
+          <td>newsletter analytics dashboard</td>
+          <td>24</td>
+          <td>543</td>
+          <td>4.42%</td>
+          <td>8.9</td>
+        </tr>
+        
+        <tr>
+          <td class="rank">20</td>
+          <td>content marketing analytics</td>
+          <td>18</td>
+          <td>432</td>
+          <td>4.17%</td>
+          <td>12.1</td>
+        </tr>
+        
+        
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 5: LANDING PAGES -->
+<section class="section">
+  <div class="section-title">🚪 Top Landing Pages</div>
+  <div class="grid-2" style="margin-bottom:var(--gap)">
+    <div class="callout">
+      <div class="callout-title">🔺 Biggest Gainers</div>
+      <ul>
+        
+        
+        <li>
+          <span class="page">/blog/ai-newsletter-tools</span>
+          <span class="tag gain">+44</span>
+        </li>
+        
+        
+        
+        <li>
+          <span class="page">/blog/weekly-analytics-setup</span>
+          <span class="tag gain">+43</span>
+        </li>
+        
+        
+        
+        <li>
+          <span class="page">/blog/claude-skills-guide</span>
+          <span class="tag gain">+42</span>
+        </li>
+        
+        
+        
+      </ul>
+    </div>
+    <div class="callout">
+      <div class="callout-title">🔻 Biggest Drops</div>
+      <ul>
+        
+        
+        <li>
+          <span class="page">/</span>
+          <span class="tag drop">-14</span>
+        </li>
+        
+        
+        
+        <li>
+          <span class="page">/about</span>
+          <span class="tag drop">-13</span>
+        </li>
+        
+        
+        
+        <li>
+          <span class="page">/contact</span>
+          <span class="tag drop">-7</span>
+        </li>
+        
+        
+        
+      </ul>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Page</th><th>Sessions</th><th>New Users</th><th>Change</th><th>%</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td class="rank">1</td>
+          <td class="mono">/</td>
+          <td>398</td>
+          <td>281</td>
+          <td class="negative">
+            -14
+          </td>
+          <td class="negative">
+            -3.4%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">2</td>
+          <td class="mono">/blog/ai-newsletter-tools</td>
+          <td>287</td>
+          <td>234</td>
+          <td class="positive">
+            +44
+          </td>
+          <td class="positive">
+            +18.1%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">3</td>
+          <td class="mono">/blog/weekly-analytics-setup</td>
+          <td>241</td>
+          <td>198</td>
+          <td class="positive">
+            +43
+          </td>
+          <td class="positive">
+            +21.7%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">4</td>
+          <td class="mono">/blog/substack-growth-tips</td>
+          <td>198</td>
+          <td>162</td>
+          <td class="positive">
+            +31
+          </td>
+          <td class="positive">
+            +18.6%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">5</td>
+          <td class="mono">/blog/claude-skills-guide</td>
+          <td>163</td>
+          <td>141</td>
+          <td class="positive">
+            +42
+          </td>
+          <td class="positive">
+            +34.7%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">6</td>
+          <td class="mono">/about</td>
+          <td>143</td>
+          <td>88</td>
+          <td class="negative">
+            -13
+          </td>
+          <td class="negative">
+            -8.3%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">7</td>
+          <td class="mono">/blog/google-search-console</td>
+          <td>121</td>
+          <td>103</td>
+          <td class="positive">
+            +23
+          </td>
+          <td class="positive">
+            +23.5%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">8</td>
+          <td class="mono">/pricing</td>
+          <td>94</td>
+          <td>67</td>
+          <td class="negative">
+            -7
+          </td>
+          <td class="negative">
+            -6.9%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">9</td>
+          <td class="mono">/contact</td>
+          <td>87</td>
+          <td>41</td>
+          <td class="negative">
+            -7
+          </td>
+          <td class="negative">
+            -7.4%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">10</td>
+          <td class="mono">/resources</td>
+          <td>54</td>
+          <td>38</td>
+          <td class="negative">
+            -7
+          </td>
+          <td class="negative">
+            -11.5%
+          </td>
+        </tr>
+        
+        
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 6: DEVICES -->
+<section class="section">
+  <div class="section-title">📱 Device Split</div>
+  <div style="max-width:380px; margin:0 auto">
+    <div class="chart-wrap">
+      <div class="chart-title">Sessions by Device — This Week</div>
+      <canvas id="deviceChart" height="240"></canvas>
+    </div>
+  </div>
+  
+  <div style="max-width:500px; margin:1.25rem auto 0">
+    <div class="callout">
+      <div class="callout-title">Week-over-week device share shift</div>
+      <ul>
+        
+        <li>
+          <span><strong>Desktop</strong> — 58.2% this week</span>
+          <span class="tag drop">
+            -3.1pp
+          </span>
+        </li>
+        
+        <li>
+          <span><strong>Mobile</strong> — 36.4% this week</span>
+          <span class="tag gain">
+            +1.5pp
+          </span>
+        </li>
+        
+        <li>
+          <span><strong>Tablet</strong> — 5.4% this week</span>
+          <span class="tag gain">
+            +1.6pp
+          </span>
+        </li>
+        
+      </ul>
+    </div>
+  </div>
+  
+</section>
+
+<!-- SECTION 7: ENGAGEMENT -->
+<section class="section">
+  <div class="section-title">⏱️ Page Engagement</div>
+  
+  <div class="callout" style="margin-bottom:var(--gap)">
+    <div class="callout-title">Significant Changes (±20%+ in avg engagement time)</div>
+    <ul>
+      
+      <li>
+        <span class="page">/blog/claude-skills-guide</span>
+        <span class="tag gain">+21%</span>
+      </li>
+      
+      <li>
+        <span class="page">/blog/substack-growth-tips</span>
+        <span class="tag gain">+20%</span>
+      </li>
+      
+      
+    </ul>
+  </div>
+  
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Page</th><th>Avg Engagement</th><th>Views</th><th>vs Site Avg</th><th>WoW Change</th></tr></thead>
+      <tbody>
+        
+        <tr>
+          <td class="rank">1</td>
+          <td class="mono">/blog/claude-skills-guide</td>
+          <td>5:12</td>
+          <td>412</td>
+          <td class="positive">
+            +2:01
+          </td>
+          <td class="positive">
+            +20.9%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">2</td>
+          <td class="mono">/blog/substack-growth-tips</td>
+          <td>4:38</td>
+          <td>341</td>
+          <td class="positive">
+            +1:27
+          </td>
+          <td class="positive">
+            +20.3%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">3</td>
+          <td class="mono">/blog/weekly-analytics-setup</td>
+          <td>4:05</td>
+          <td>387</td>
+          <td class="positive">
+            +0:54
+          </td>
+          <td class="positive">
+            +12.4%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">4</td>
+          <td class="mono">/blog/email-marketing-tips</td>
+          <td>3:41</td>
+          <td>212</td>
+          <td class="positive">
+            +0:30
+          </td>
+          <td class="positive">
+            +16.9%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">5</td>
+          <td class="mono">/blog/ai-newsletter-tools</td>
+          <td>3:21</td>
+          <td>498</td>
+          <td class="positive">
+            +0:10
+          </td>
+          <td class="positive">
+            +12.9%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">6</td>
+          <td class="mono">/blog/google-search-console</td>
+          <td>3:18</td>
+          <td>287</td>
+          <td class="positive">
+            +0:07
+          </td>
+          <td class="positive">
+            +18.6%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">7</td>
+          <td class="mono">/blog/analytics-for-beginners</td>
+          <td>3:07</td>
+          <td>178</td>
+          <td class="negative">
+            0:04
+          </td>
+          <td class="positive">
+            +15.4%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">8</td>
+          <td class="mono">/</td>
+          <td>2:12</td>
+          <td>643</td>
+          <td class="negative">
+            0:59
+          </td>
+          <td class="positive">
+            +10.9%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">9</td>
+          <td class="mono">/resources</td>
+          <td>1:34</td>
+          <td>121</td>
+          <td class="negative">
+            1:37
+          </td>
+          <td class="positive">
+            +8.0%
+          </td>
+        </tr>
+        
+        <tr>
+          <td class="rank">10</td>
+          <td class="mono">/pricing</td>
+          <td>1:28</td>
+          <td>178</td>
+          <td class="negative">
+            1:43
+          </td>
+          <td class="negative">
+            -4.3%
+          </td>
+        </tr>
+        
+        
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <span>Data: Google Analytics 4 &amp; Search Console · Scheduled CSV exports</span>
+  <span>Saved: <code>C:\Users\athar\analytics-reports</code></span>
+</footer>
+
+</div><!-- /.container -->
+
+<script>
+Chart.defaults.color = '#8b95a8';
+Chart.defaults.borderColor = '#2a2d3a';
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+/* Sessions chart */
+const sessLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const sessTW     = [312.0, 341.0, 287.0, 298.0, 256.0, 189.0, 203.0];
+const sessLW     = [278.0, 301.0, 265.0, 312.0, 231.0, 178.0, 189.0];
+const sessDatasets = [{
+  label: 'This Week',
+  data: sessTW, borderColor:'#4f8ef7', backgroundColor:'rgba(79,142,247,.1)',
+  tension:.4, fill:true, pointRadius:4, pointBackgroundColor:'#4f8ef7'
+}];
+
+sessDatasets.push({
+  label: 'Comparison Week',
+  data: sessLW, borderColor:'#818cf8', backgroundColor:'rgba(129,140,248,.05)',
+  tension:.4, fill:true, borderDash:[5,4], pointRadius:3, pointBackgroundColor:'#818cf8'
+});
+
+new Chart(document.getElementById('sessionsChart'), {
+  type:'line', data:{ labels:sessLabels, datasets:sessDatasets },
+  options:{ responsive:true, plugins:{legend:{position:'top'}},
+    scales:{ y:{grid:{color:'#2a2d3a'},beginAtZero:false}, x:{grid:{color:'#2a2d3a'}} } }
+});
+
+/* Channel chart */
+const chLabels = ["Organic Search", "Direct", "Email", "Paid Search", "Organic Social", "(Other)", "Referral"];
+const chTW     = [891.0, 312.0, 187.0, 155.0, 143.0, 100.0, 98.0];
+const chLW     = [856.0, 341.0, 143.0, 122.0, 98.0, 82.0, 112.0];
+const chDatasets = [{
+  label:'This Week', data:chTW, backgroundColor:'rgba(79,142,247,.85)', borderRadius:4
+}];
+
+chDatasets.push({ label:'Comparison', data:chLW, backgroundColor:'rgba(129,140,248,.4)', borderRadius:4 });
+
+new Chart(document.getElementById('channelChart'), {
+  type:'bar', data:{ labels:chLabels, datasets:chDatasets },
+  options:{ indexAxis:'y', responsive:true, plugins:{legend:{position:'top'}},
+    scales:{ x:{grid:{color:'#2a2d3a'},beginAtZero:true}, y:{grid:{color:'transparent'}} } }
+});
+
+/* Device donut */
+new Chart(document.getElementById('deviceChart'), {
+  type:'doughnut',
+  data:{
+    labels: ["Desktop", "Mobile", "Tablet"],
+    datasets:[{ data:[58.2, 36.4, 5.4],
+      backgroundColor:['#4f8ef7','#22c55e','#f59e0b'],
+      borderColor:'#1a1d27', borderWidth:3 }]
+  },
+  options:{ responsive:true, cutout:'65%',
+    plugins:{ legend:{position:'bottom'},
+      tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } } } }
+});
+</script>
+</body>
+</html>
